@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileRequired, FileAllowed
 from wtforms import StringField, PasswordField, TextAreaField
 from wtforms.validators import InputRequired, DataRequired, Email
 
-class MyForm(FlaskForm):
+class RegForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired()])
     password = PasswordField('Password', validators=[InputRequired()])
     firstname = StringField('First Name', validators=[DataRequired()])
