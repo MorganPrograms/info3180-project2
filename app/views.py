@@ -17,7 +17,7 @@ from werkzeug.datastructures import CombinedMultiDict
 #from app.__init__ import UPLOAD_FOLDER
 from flask import render_template, request, redirect, url_for, flash, session, abort
 from flask_login import login_user, logout_user, current_user, login_required
-from app.forms import ProfileForm, Login, RegForm,PostForm
+from app.forms import Login, RegForm,PostForm
 from app.models import User, Follows, Post, Likes 
 #from is_safe_url import is_safe_url
 from werkzeug.security import check_password_hash

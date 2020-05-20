@@ -76,13 +76,12 @@ const Explore = Vue.component('Explore-page',{
 const Home = Vue.component('Home-page',{
     template:`
     
-        <div>
+    <div id = "container">
+    <button class="btn btn-primary mb-2"
+    @click="GoToRegister">Register</button>
       <button class="btn btn-primary mb-2"
       @click="GoToLogin">Login</button>
-        </div>
-        <div>
-      <button class="btn btn-primary mb-2"
-      @click="GoToRegister">Register</button>
+
           </div>
       `,
       methods:
@@ -370,7 +369,7 @@ const Login =Vue.component('Login-form',{
 Vue.component('app-header', {
     template: `
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-      <a class="navbar-brand" href="#">Lab 7</a>
+      <a class="navbar-brand" href="#">Photogram</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -381,7 +380,7 @@ Vue.component('app-header', {
             <router-link class="nav-link" to="/">Home <span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
-            <router-link class="nav-link" to="/register">Upload <span class="sr-only">(current)</span></router-link>
+            <router-link class="nav-link" to="/register">Register<span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
             <router-link class="nav-link" to="/login">Login <span class="sr-only">(current)</span></router-link>
