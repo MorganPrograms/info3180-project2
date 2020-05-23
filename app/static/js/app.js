@@ -87,10 +87,10 @@ const Home = Vue.component('Home-page',{
       methods:
       {
           GoToLogin: function(){
-            route.push({ path: '/login'})
+            router.push({path:'login'})
           },
           GoToRegister: function(){
-            route.push({ path: '/register'})
+            router.push({path:'register'})
           }
           
       }
