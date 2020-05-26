@@ -66,22 +66,58 @@ def get_uploaded_images():
     return image_list
     
 # connect to v-onclick button in api fetch in js file
-"""@app.route('/api/users/{user_id}/follow')
-def follow(user_id):"""
+@app.route('/api/users/{user_id}/follow')
+def follow(user_id):
+    followerID = current_user.id
+    newFollow = Follows(user_id,followerID)
+    db.session.add(newFollow)
+    db.session.commit()
+    return jsonify(follow = "New Follower!")
     
-    #incorrect - Look in lab 5 for right method
+    
+@app.route('/api/posts/{post_id}/like')
+def Like(post_id):
+    LikerID = current_user.id
+    LikedPost = Likes(LikerID,post_id)
+    db.session.add(LikedPost)
+    db.session.commit()
+    return jsonify(Like = "New Like!")
+    
+    
 @app.route('/api/auth/login', methods=['POST'])
 def login():
     
-    error = None
-    if request.method == 'POST':
-        if request.form['username'] != app.config['USERNAME'] or request.form['password'] != app.config['PASSWORD']:
-            error = 'Invalid username or password'
-        else:
-            session['logged_in'] = True
-            granted = 'true'
-            return jsonify(access=granted)
-            flash('You were logged in', 'success')
+    form = Login()
+    if request.method == "POST":
+        # change this to actually validate the entire form submission
+        # and not just one field
+        if form.validate_on_submit():
+            # Get the username and password values from the form.
+            username = form.username.data
+            password = form.password.data
+            
+            user = User.query.filter_by(username=username).first()
+            if user is not None and check_password_hash(user.password, password):
+                
+                
+                remember_me = False
+                
+                if 'remember_me' in request.form:
+                    remember_me = True
+                # get user id, load into session
+                
+                login_user(user, remember=remember_me)
+                
+                
+                
+                flash('Logged in successfully.', 'success')
+                return jsonify(LoginState = "Success" )
+                
+                
+                 
+            else:
+                flash('Username or Password is incorrect.', 'danger')
+                return jsonify(LoginState = "Fail" )
             
     
 #Alternatively...
@@ -97,13 +133,13 @@ def login():
         if check_password_hash(us['password'],pword):
             session['user_id'] = us['id']
     """
-@app.route("/api/posts/", methods=['GET']) 
+@app.route("/api/posts", methods=['GET']) 
 def AllPosts():
     AllPost = db.session.query(Post).all()
     AllUsers = db.session.query(User).all()
     return jsonify(Posts=AllPost,Users=AllUsers)
 
-@app.route("/api/users/", methods=['GET'])   
+@app.route("/api/users", methods=['GET'])   
 def getUserID():
     ID = current_user.id
     return jsonify(ID=ID)
@@ -112,7 +148,7 @@ def getUserID():
     
 @app.route("/api/users/{user_id}/posts", methods=['GET','POST'])
 def posts(user_id):
-    # how exactly will the user_id be obtained?
+    # how exactly will the user_id be obtained? - check corresponding vue frontend
     form =PostForm(CombinedMultiDict((request.files, request.form)))
     filefolder = UPLOAD_FOLDER
     
@@ -132,12 +168,15 @@ def posts(user_id):
             post = Post(useID,file.filename,cap,currentDate)
             db.session.add(post)
             db.session.commit()
+            status = "success"
+            return jsonify(state=status)
     elif request.method == 'GET':
         posts = Post.query.filter_by(user_id=user_id).all() # Created as an array (I think)
         # (May have to) try to separate them from within view file
         #Also send current user info from here to be placed in template - Try self.request.user
-        user = UserProfile.query.filter_by(id=user_id).first()
-        return jsonify(userPosts = posts,userInfo=user)
+        user = User.query.filter_by(id=user_id).first()
+        postAmt= db.session.query(Post).filter_by(user_id=useID).count()
+        return jsonify(userPosts = posts,userInfo=user,PAmt=postAmt)
         
 
     
@@ -146,17 +185,20 @@ def posts(user_id):
 @app.route("/api/users/register", methods=['POST'])
 def register():
     # get forms from group mate repository
-    form =RegForm(CombinedMultiDict((request.files, request.form)))
+    form=RegForm()
+    #form =RegForm(CombinedMultiDict((request.files, request.form)))
     filefolder = UPLOAD_FOLDER
     
     
-    if request.method == "POST":
-        
-        if form.validate_on_submit():
+    if request.method == 'POST':
+       
+        if form.validate_on_submit() and User.query.filter_by(username=form.username.data).first() is None and User.query.filter_by(email=form.email.data).first() is None:
+            #try to figure how to hash password here so that you can check it as well
         
             # Get the username and password values from the form.
             uname = form.username.data
             fname = form.firstname.data
+            
             lname = form.lastname.data
             password = form.password.data
             location = form.location.data
@@ -164,7 +206,7 @@ def register():
             currentDate = now.strftime("%B-%d-%Y")
             #currentDate = now.strftime("%d-%B-%Y %H:%M:%S")
             email = form.email.data
-            gender = form.gender.data
+            
             biography = form.biography.data
             #file= form.photo.data
             file = request.files.get('file')
@@ -181,14 +223,28 @@ def register():
             user= User( uname,fname, lname,password, location, email,biography,file.filename,currentDate)
             db.session.add(user)
             db.session.commit()
-            return jsonify(access = 'true')
-            flash('User Added successfully.', 'success')
+            return jsonify(access = 'true',UINFO = uname)
+            #flash('User Added successfully.', 'success')
             
         else:
-            flash("Try again")
-            print (form.errors.items())
             
-    return render_template("profile.html", form=form)
+            errors = form_errors(form)
+            status = "wrong"
+            if User.query.filter_by(username=form.username.data).first() is not None:
+                uNameError = "User name already exists"
+                errors.append(uNameError)
+            if User.query.filter_by(email=form.email.data).first() is not None:
+                MailError = "Email Address already exists"
+                errors.append(MailError)
+            """if User.query.filter_by(password=).first() is not None:
+                MailError = "Passwor already in use"
+                errors.append(MailError)"""
+            return jsonify(error=errors,Fail = "fail")
+            
+            #flash("Try again")
+            #print (form.errors.items())
+            
+    
     
 @app.route('/')
 def home():
@@ -202,20 +258,7 @@ def about():
     return render_template('about.html')
 
 
-@app.route("/profiles", methods=["GET", "POST"])
-def profiles():
-     users = UserProfile.query.all()
-     pics = get_uploaded_images()
-     
-     return render_template('profiles.html', users=users,pics=pics)
-     
-@app.route("/profile/<userid>", methods=["GET", "POST"])
-def pInfo(userid):
-    User = UserProfile.query.get(userid)
-    #print(User.id)
-    pics = get_uploaded_images()
-    return render_template('UserInfo.html', member=User,pics=pics)
-    
+
 
 
 
