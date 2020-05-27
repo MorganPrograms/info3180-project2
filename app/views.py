@@ -82,6 +82,8 @@ def Like(post_id):
     db.session.add(LikedPost)
     db.session.commit()
     return jsonify(Like = "New Like!")
+def dissect_user(User):
+    User_data = []
     
     
 @app.route('/api/auth/login', methods=['POST'])
@@ -100,24 +102,22 @@ def login():
             if user is not None and check_password_hash(user.password, password):
                 
                 
-                remember_me = False
                 
-                if 'remember_me' in request.form:
-                    remember_me = True
-                # get user id, load into session
                 
-                login_user(user, remember=remember_me)
+                login_user(user)
                 
                 
                 
-                flash('Logged in successfully.', 'success')
+                
                 return jsonify(LoginState = "Success" )
                 
                 
                  
             else:
-                flash('Username or Password is incorrect.', 'danger')
+                
                 return jsonify(LoginState = "Fail" )
+        else:
+            return jsonify(LoginState = "Failure")
             
     
 #Alternatively...
@@ -135,9 +135,38 @@ def login():
     """
 @app.route("/api/posts", methods=['GET']) 
 def AllPosts():
-    AllPost = db.session.query(Post).all()
+    PostData = []
+    UserData = []
     AllUsers = db.session.query(User).all()
-    return jsonify(Posts=AllPost,Users=AllUsers)
+    AllPost = db.session.query(Post).all()
+    
+    for post in AllPost:
+        data = {
+            'id': post.id,
+            'user_id': post.user_id,
+            'photo': post.photo,
+            'caption': post.caption,
+            'created_on':post.created_on,
+            
+        }
+        PostData.append(data)
+    for user in AllUsers:
+        data = {
+            'id':user.id,
+            'username': user.username,
+            'FirstName': user.first_name,
+            'LastName': user.last_name,
+            'date_joined':user.joined_on,
+            'photo': user.profile_photo,
+            'email': user.email,
+            'location': user.location,
+            'biography': user.biography,
+            'password': user.password
+        }
+        UserData.append(data)
+    
+    
+    return jsonify(Posts=PostData,Users = UserData)
 
 @app.route("/api/users", methods=['GET'])   
 def getUserID():
@@ -146,15 +175,16 @@ def getUserID():
 
     
     
-@app.route("/api/users/{user_id}/posts", methods=['GET','POST'])
+@app.route("/api/users/<user_id>/posts", methods=['GET','POST'])
 def posts(user_id):
     # how exactly will the user_id be obtained? - check corresponding vue frontend
     form =PostForm(CombinedMultiDict((request.files, request.form)))
+    #form =PostForm()
     filefolder = UPLOAD_FOLDER
     
     if request.method == 'POST':
         if form.validate_on_submit():
-            useID= user_id
+            useID= user_id # use current ID
             file = request.files.get('file')
             file=form.photo.data
             if file:
@@ -239,7 +269,7 @@ def register():
             """if User.query.filter_by(password=).first() is not None:
                 MailError = "Passwor already in use"
                 errors.append(MailError)"""
-            return jsonify(error=errors,Fail = "fail")
+            return jsonify(error=errors,access = "fail")
             
             #flash("Try again")
             #print (form.errors.items())
@@ -279,7 +309,7 @@ def load_user(id):
 def logout():
     # Logout the user and end the session
     logout_user()
-    flash('You have been logged out.', 'danger')
+    return jsonify(logout = "Logout successful")
     
 
 
