@@ -69,10 +69,18 @@ def get_uploaded_images():
 @app.route('/api/users/<user_id>/follow')
 def follow(user_id):
     followerID = current_user.id
-    newFollow = Follows(user_id,followerID)
-    db.session.add(newFollow)
-    db.session.commit()
-    return jsonify(follow = "New Follower!")
+    
+    print(followerID==int(user_id))
+    if followerID != int(user_id):
+        if Follows.query.filter_by(user_id=user_id,follower_id=followerID).first() is None:
+            newFollow = Follows(user_id,followerID)
+            db.session.add(newFollow)
+            db.session.commit()
+            return jsonify(follow = "New Follower of " + user_id)
+        else:
+            return jsonify(follow = "You are already a follower of this user!")
+    else:
+        return jsonify(follow = "You Cannot Follow Yourself!")
     
     
 @app.route('/api/posts/<post_id>/like')
@@ -151,6 +159,7 @@ def AllPosts():
             'photo': post.photo,
             'caption': post.caption,
             'created_on':post.created_on,
+            'likes' :  Likes.query.filter_by(post_id=post.id).count()
             
         }
         PostData.append(data)
@@ -208,19 +217,30 @@ def posts(user_id):
             return jsonify(state=status)
     elif request.method == 'GET':
         posts = Post.query.filter_by(user_id=user_id).all() # Created as an array (I think)
-        postList = []
-        for post in posts:
-            data = {
-                'id': post.id,
-                'user_id': post.user_id,
-                'photo': post.photo,
-                'caption': post.caption,
-                'created_on':post.created_on,
-                
-            }
-        postList.append(data)
+        followYet=Follows.query.filter_by(user_id=user_id,follower_id=current_user.id).count()
+        print(followYet)
+        if followYet ==0:
+            following = "no"
+        else:
+            following ="yes"
+        postList = [] 
+        postAmt= db.session.query(Post).filter_by(user_id=user_id).count()
+        Followers= db.session.query(Follows).filter_by(user_id=user_id).count()
+        if postAmt!=0:
+            
+            for post in posts:
+                data = {
+                    'id': post.id,
+                    'user_id': post.user_id,
+                    'photo': post.photo,
+                    'caption': post.caption,
+                    'created_on':post.created_on,
+                    
+                }
+            postList.append(data)
         userFacts = []
         user = User.query.filter_by(id=user_id).first()
+        
         usedata = {
             'id':user.id,
             'username': user.username,
@@ -230,6 +250,7 @@ def posts(user_id):
             'photo': user.profile_photo,
             'email': user.email,
             'location': user.location,
+            'followAmt': Followers,
             'biography': user.biography,
             'password': user.password
         }
@@ -237,8 +258,8 @@ def posts(user_id):
         # (May have to) try to separate them from within view file
         #Also send current user info from here to be placed in template - Try self.request.user
         
-        postAmt= db.session.query(Post).filter_by(user_id=user_id).count()
-        return jsonify(userPosts = postList,userInfo=userFacts,PAmt=postAmt)
+        
+        return jsonify(userPosts = postList,userInfo=userFacts,PAmt=postAmt,follow = following)
         
 
     
