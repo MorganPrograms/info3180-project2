@@ -8,6 +8,8 @@ import Vuetify from 'vuetify';
 import "isomorphic-fetch";*/
 //Make sure to add click.prevent to all buttons
 const proxyurl = "https://whispering-tor-87831.herokuapp.com";
+
+
 Vue.prototype.$logStatus = "off";
 const Explore = Vue.component('Explore-page',{//requires current user ID
     template:`
@@ -20,14 +22,15 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
         <div class = "post">
             <span v-for="user in Users">
                 <span v-if="user.id == post.user_id">
-                {{user.photo}}
-                    <img class = "profexplorepic" :src="user.photo" alt = "Picture"/><p @click="GoToUser(user.username)">{{user.username}}</p>
+                
+                    <img class = "profexplorepic" :src="'/static/uploads/' + user.photo" :alt="user.photo" /><button class="btn btn-primary mb-2" @click="GoToUser(user.username)">{{user.username}}</button>
                     <!--img src="../static/Halo_master_chief.jpe"-->
+                    
                 </span>
               
             </span>
-          <img class = "postpic" src="../static/uploads/download.jpg" alt = "Picture"/> 
-          
+          <img class = "postpic" :src="'/static/uploads/'+post.photo" alt = "Picture"/> 
+          {{post.photo}}
           <br>
           {{post.caption}}
           <button class="btn btn-primary mb-2" @click="AddLike(post.id)">Like</button>
@@ -38,7 +41,7 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
    
     
     `
-,
+,// Problem with images : Name in upload folder and name returned by photo field of User/Post not Matching!!!
   created: function() {
     let self = this;
     fetch('/api/posts')
@@ -72,17 +75,30 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
    methods:
       {
           GoToUser: function(uname){
-            for(user in Users){
-                if(user.username == uname){
-                    self.ViewID = user.id
-                    router.push({ name: 'users', params: { user_id:ViewId } })
+              let self = this;
+            console.log("Hello")
+            /*console.log(uname)
+            console.log(self.Users)
+            console.log(self.Users.length)
+            console.log(self.Users[0].username)*/
+            for(user in self.Users){
+                console.log("Hello")
+                console.log(user)
+                console.log(self.Users[user].username)
+               // this.$router.push({ name: 'login' });
+                if(self.Users[user].username == uname){
+                    self.ViewID = self.Users[user].id
+                   console.log("Found you")
+                    
+                    self.$router.push({ name: 'users', params: { user_id:self.ViewID } })
                 }
             }
     
             
           },
+          
           AddLike: function(PostID){
-              fetch("/api/posts/PostID/like",{
+              fetch("/api/posts/"+PostID+"/like",{
                   method : 'GET',
                   credentials: 'same-origin'
               })
@@ -91,11 +107,11 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
                 })
                 .then(function (data) {
                 // display a success message
-                console.log(jsonResponse)          
+                console.log(data)          
                 //self.PostID = data.ID
                 //router.push({ name: 'posts/new', params: { Pid:self.PostID } })
                 // remember to set up prop['Pid' in posts/new frontend
-                route.push({ path: '/posts/new'})
+                //route.push({ path: '/posts/new'})
                 })
                 .catch(function (error) {
                 console.log(error);
@@ -290,7 +306,7 @@ const Register =Vue.component('Register-form',{
                     //this.$router.push({ path: '/explore'});
                     self.Success = "Yes"
                     alert("Registration Successful")
-                    self.$router.push({ name: 'explore' });
+                    self.$router.push({ name: 'home' });
                     
                 }
                 else{
@@ -387,28 +403,30 @@ const Posts =Vue.component('Post-form',{
 // For myProfile tab make it so that current user ID is stored in the prop!
 // May have to just create another similar component in which you'd use the helper route you made to get the id of the current
 const UserProfile = Vue.component('UserProfile',{// get user_id  and details from view file
-    props: ['user_id'],
+    //props: ['user_id'],
     template : `
-    <div class = "UsersPosts>
-        
+    <div class = "UsersPosts">
+            <!--p>{{$route.params.user_id }}</p-->
             <div class = "user">
                 
                     <div class = "UInfo">
-                    <img class = "profpic" :src="User.profile_photo" alt = "Picture"/><p>{{User.username}}</p>
-                    {{user.biography}}
+                    <img class = "profpic" :src="'/static/uploads/'+User[0].photo" alt = "Picture"/><p>{{User[0].username}} is HERE!</p>
+                    {{User[0].biography}}
                     </div>
-                    <div class = "UserStats>
+                    <div class = "UserStats">
                         <h4>Posts</h4>{{PostNumber}}
-                        <h4>Follows<h4>
+                        <h4>Follows</h4>
                     </div>
                     <div>
-                        <button class="btn btn-primary mb-2" @click="Follow(User.id)">Follow</button>
+                    
+                    <button class="btn btn-primary mb-2" @click.prevent="Follow(User[0].id)">Follow</button>
+                        
                     </div>
                     <div>
                     <ul class = "UserItem">
                         <li v-for="post in Posts">
                         
-                             <img class = "postpic" :src="post.photo" alt = "Picture"/> 
+                             <img class = "postpic" :src="'/static/uploads/'+post.photo" alt = "Picture"/> 
                          
                         </li>
                       </ul>
@@ -421,15 +439,30 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
     `,
   created: function() {
     let self = this;
-    if(props['user_id']==null){
+    if(self.$route.params.user_id =="find"){
+        console.log("Fetching")
         fetch('/api/users')// use my My-Profile menu-item
          .then(function(response) {
         return response.json();
         })
         .then(function(data) {
         console.log(data);
-        
-        self.ID =data.ID;
+        self.$route.params.user_id = data.ID;
+        console.log(self.$route.params.user_id + "HERE")
+        self.ID = self.$route.params.user_id
+        console.log(self.ID)
+        console.log(self.ID + "present")
+        fetch('/api/users/'+self.ID+'/posts')
+        .then(function(response) {
+        return response.json();
+        })
+        .then(function(data) {
+         //self.$route.params.user_id =null
+        console.log(data);
+        self.User = data.userInfo;
+        self.Posts = data.userPosts;
+        self.PostNumber = data.PAmt;
+        });
         });
     }
     /*fetch('/api/posts')// use my My-Profile menu-item
@@ -445,20 +478,22 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         });
     */
     else{
-      self.ID= user_id  
-    }
-    
-        fetch('/api/users/self.ID/posts')
+      self.ID= self.$route.params.user_id  ;
+      console.log(self.$route.params.user_id);
+      console.log(self.ID + "present")
+        fetch('/api/users/'+self.ID+'/posts')
         .then(function(response) {
         return response.json();
         })
         .then(function(data) {
-        props['user_id']=null
+         //self.$route.params.user_id =null
         console.log(data);
         self.User = data.userInfo;
         self.Posts = data.userPosts;
         self.PostNumber = data.PAmt;
         });
+    }
+        
         
         },
     data: function() {
@@ -473,7 +508,7 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
   },
   methods:{
       Follow: function(UID){
-          fetch('/api/users/UID/follow')
+          fetch('/api/users/'+UID+'/follow')
         .then(function(response) {
         return response.json();
         })
@@ -586,7 +621,7 @@ Vue.component('app-header', {
             <router-link class="nav-link" to="/explore">Explore <span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
-            <router-link class="nav-link" to="/users/:user_id">My own Profile <span class="sr-only">(current)</span></router-link>
+            <router-link class="nav-link" to="/users/find">My own Profile <span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
                     
@@ -633,7 +668,7 @@ const router = new VueRouter({
         {path: "/register",name: "register", component: Register},
         {path: "/logout",name:"logout", component: Logout},
         {path: "/login",name: "login", component: Login},
-        {path: "/users/:user_id",  component: UserProfile,  props: true},
+        {path: "/users/:user_id",name: "users" , component: UserProfile},
         {path: "/explore",name: "explore", component: Explore},
         {path: "/posts/new",name:"/posts/new", component: Posts},
         // This is a catch all route in case none of the above matches
