@@ -66,7 +66,7 @@ def get_uploaded_images():
     return image_list
     
 # connect to v-onclick button in api fetch in js file
-@app.route('/api/users/{user_id}/follow')
+@app.route('/api/users/<user_id>/follow')
 def follow(user_id):
     followerID = current_user.id
     newFollow = Follows(user_id,followerID)
@@ -75,16 +75,19 @@ def follow(user_id):
     return jsonify(follow = "New Follower!")
     
     
-@app.route('/api/posts/{post_id}/like')
+@app.route('/api/posts/<post_id>/like')
 def Like(post_id):
     LikerID = current_user.id
-    LikedPost = Likes(LikerID,post_id)
-    db.session.add(LikedPost)
-    db.session.commit()
-    return jsonify(Like = "New Like!")
-def dissect_user(User):
-    User_data = []
-    
+    LikeCheck=Likes.query.filter_by(user_id=LikerID,post_id=post_id).first()
+    if LikeCheck is None:
+        LikedPost = Likes(LikerID,post_id)
+        db.session.add(LikedPost)
+        db.session.commit()
+        return jsonify(Like = "New Like!")
+    else:
+        return jsonify(greedy = "You have already liked this post!")
+        # display message in webpage
+
     
 @app.route('/api/auth/login', methods=['POST'])
 def login():
@@ -134,6 +137,7 @@ def login():
             session['user_id'] = us['id']
     """
 @app.route("/api/posts", methods=['GET']) 
+
 def AllPosts():
     PostData = []
     UserData = []
@@ -169,6 +173,7 @@ def AllPosts():
     return jsonify(Posts=PostData,Users = UserData)
 
 @app.route("/api/users", methods=['GET'])   
+#@login_required
 def getUserID():
     ID = current_user.id
     return jsonify(ID=ID)
@@ -176,6 +181,7 @@ def getUserID():
     
     
 @app.route("/api/users/<user_id>/posts", methods=['GET','POST'])
+#@login_required
 def posts(user_id):
     # how exactly will the user_id be obtained? - check corresponding vue frontend
     form =PostForm(CombinedMultiDict((request.files, request.form)))
@@ -202,11 +208,37 @@ def posts(user_id):
             return jsonify(state=status)
     elif request.method == 'GET':
         posts = Post.query.filter_by(user_id=user_id).all() # Created as an array (I think)
+        postList = []
+        for post in posts:
+            data = {
+                'id': post.id,
+                'user_id': post.user_id,
+                'photo': post.photo,
+                'caption': post.caption,
+                'created_on':post.created_on,
+                
+            }
+        postList.append(data)
+        userFacts = []
+        user = User.query.filter_by(id=user_id).first()
+        usedata = {
+            'id':user.id,
+            'username': user.username,
+            'FirstName': user.first_name,
+            'LastName': user.last_name,
+            'date_joined':user.joined_on,
+            'photo': user.profile_photo,
+            'email': user.email,
+            'location': user.location,
+            'biography': user.biography,
+            'password': user.password
+        }
+        userFacts.append(usedata)
         # (May have to) try to separate them from within view file
         #Also send current user info from here to be placed in template - Try self.request.user
-        user = User.query.filter_by(id=user_id).first()
-        postAmt= db.session.query(Post).filter_by(user_id=useID).count()
-        return jsonify(userPosts = posts,userInfo=user,PAmt=postAmt)
+        
+        postAmt= db.session.query(Post).filter_by(user_id=user_id).count()
+        return jsonify(userPosts = postList,userInfo=userFacts,PAmt=postAmt)
         
 
     
@@ -305,7 +337,7 @@ def load_user(id):
 ###
 
 @app.route("/api/auth/logout", methods = ['GET'])
-@login_required
+#@login_required
 def logout():
     # Logout the user and end the session
     logout_user()
