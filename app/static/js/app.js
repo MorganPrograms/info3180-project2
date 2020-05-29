@@ -13,7 +13,7 @@ const proxyurl = "https://whispering-tor-87831.herokuapp.com";
 Vue.prototype.$logStatus = "off";
 const Explore = Vue.component('Explore-page',{//requires current user ID
     template:`
-    <div class = "UsersPosts">
+    <div class = "UsersPosts" class="formstuff">
         <div class = "NewPostButton">
             <button class="btn btn-primary mb-2" @click="GoToPostForm">New Post</button>
         </div>
@@ -149,18 +149,17 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
 
 const Home = Vue.component('Home-page',{
     template:`
-    
     <div id = "container">
-    <div class = "HomePicture">
-    <img src="../static/Halo_master_chief.jpe">
-    
-    </div>
-    <button class="btn btn-primary mb-2"
-    @click="GoToRegister">Register</button>
-      <button class="btn btn-primary mb-2"
-      @click="GoToLogin">Login Now</button>
+      <h1 class="glow">Photogram</h1>
+      <center><img src="/static/hearthands.jpg" style="width:900px;height:380px;"></center>
 
-          </div>
+      <div class="buttons">
+        <button class="button1"
+        @click="GoToLogin">LOGIN</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="button2"
+        @click="GoToRegister">REGISTER</button> 
+      </div>
+    </div>
       `,
       methods:
       {     
@@ -224,7 +223,7 @@ const Logout = Vue.component('LogOff',{
 })
 const Register =Vue.component('Register-form',{
     template:`
-    <div>
+    <div class="formstuff">
         <span v-if="Success != 'Yes'">
         <div class = "failure">
         <li v-for="error in state">{{ error }}</p>
@@ -234,27 +233,27 @@ const Register =Vue.component('Register-form',{
         <form @submit.prevent="Register" enctype="multipart/form-data" id="RegisterForm">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type = "text" class="form-control" name="username" id="username" placeholder = "Your username">
+                <input type = "text" class="form-control" name="username" id="username">
             </div>
             <div class="form-group">
                 <label for="First-Name">FirstName</label>
-                <input type = "text" class="form-control" name="firstname" id="firstname" placeholder = "Your first name">
+                <input type = "text" class="form-control" name="firstname" id="firstname" placeholder = "Eg: John">
             </div>
              <div class="form-group">
                 <label for="lastname">Last Name</label>
-                <input type = "text" class="form-control" name="lastname" id="lastname" placeholder = "Your last name">
+                <input type = "text" class="form-control" name="lastname" id="lastname" placeholder = "Eg: Doe">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" class="form-control" name="password" id="password" placeholder = "Your Password">
+                <input type="password" class="form-control" name="password" id="password">
             </div>
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type = "email" class="form-control" name="email" id="email" placeholder = "Email Address">
+                <input type = "email" class="form-control" name="email" id="email" placeholder = "Ed: john.doe@example.com">
             </div>
             <div class="form-group">
                 <label for="location">Location</label>
-                <input type = "text" class="form-control" name="location" id="location" placeholder = "Location">
+                <input type = "text" class="form-control" name="location" id="location" placeholder = "Eg: Jamaica">
             </div>
             <div class="form-group">
             
@@ -334,7 +333,7 @@ const Register =Vue.component('Register-form',{
 const Posts =Vue.component('Post-form',{
    // props: ['Pid'],
     template:`
-    <div>
+    <div class="formstuff">
         <form  enctype="multipart/form-data" id="PostForm">
             
             
@@ -405,7 +404,7 @@ const Posts =Vue.component('Post-form',{
 const UserProfile = Vue.component('UserProfile',{// get user_id  and details from view file
     //props: ['user_id'],
     template : `
-    <div class = "UsersPosts">
+    <div class = "UsersPosts" class="formstuff">
             <!--p>{{$route.params.user_id }}</p-->
             <div class = "user">
                 
@@ -528,7 +527,7 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
 
 const Login =Vue.component('Login-form',{
     template:`
-    <div>
+    <div class="formstuff">
         <form  enctype="multipart/form-data" id="LoginForm">
             <div class="form-group">
                 <label for="username">Username</label>
