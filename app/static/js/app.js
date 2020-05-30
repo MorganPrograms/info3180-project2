@@ -66,7 +66,11 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
 ,
   created: function() {
     let self = this;
-    fetch('/api/users')// use my My-Profile menu-item
+    fetch('/api/users',{
+         'headers':{
+             'Authorization': 'Bearer ' + localStorage.getItem('token')
+         }
+     })// use my My-Profile menu-item
          .then(function(response) {
         return response.json();
         })
@@ -74,15 +78,33 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
         console.log(data);
         
         self.LikeID = data.ID});
-     fetch('/api/posts')
+     fetch('/api/posts',{
+         'headers':{
+             'Authorization': 'Bearer ' + localStorage.getItem('token')
+         }
+     })
+     
      .then(function(response) {
         return response.json();
         })
         .then(function(data) {
         console.log(data);
+        if(data.Posts){
         self.Users = data.Users;
         self.Posts = data.Posts;
         self.Likes = data.Likes;
+        console.info("Authorization Successful!")
+        }
+        //let result = response.data;
+                        // successful response
+        else{
+            
+            console.info("Authorization Failed!")
+            alert("You must be logged in to use this Function!")
+            
+            self.$router.push({ path: '/'});
+            
+        }              
         });
    
     
@@ -136,6 +158,11 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
               fetch("/api/posts/"+PostID+"/like",{
                   method : 'GET',
                   credentials: 'same-origin'
+                  ,
+                  'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                  }
+     
               })
                 .then(function (response) {
                 return response.json();
@@ -249,6 +276,11 @@ const Logout = Vue.component('LogOff',{
               fetch("/api/auth/logout",{
                   method : 'GET',
                   credentials: 'same-origin'
+                  ,
+                     'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+     
               })
                 .then(function (response) {
                 return response.json();
@@ -256,9 +288,14 @@ const Logout = Vue.component('LogOff',{
                 .then(function (jsonResponse) {
                 // display a success message
                 console.log(jsonResponse)    
-                    this.$logStatus = "off"
-                    console.log(this.$logStatus)
-                    alert(this.$logStatus)
+                    if(jsonResponse.logout){
+                    localStorage.removeItem('token');
+                    console.info('Token removed from localStorage.');
+                    alert('Logged out Successfully!');
+                    }
+                    else{
+                        alert("You must be logged IN first!")
+                    }
                     
                 })
                 .catch(function (error) {
@@ -278,44 +315,46 @@ const Logout = Vue.component('LogOff',{
 const Register =Vue.component('Register-form',{
     template:`
     <div>
-        <span v-if="Success != 'Yes'">
+        <span v-if="Success == 'no'">
         <div class = "failure">
         <li v-for="error in state">{{ error }}</p>
         </li>
         </div>
         </span>
+        <h3 id ="Rdiv">Register</h3>
+        <div class = "RForm">
         <form @submit.prevent="Register" enctype="multipart/form-data" id="RegisterForm">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username" class = "RegField" id = "RegUser">Username</label>
                 <input type = "text" class="form-control" name="username" id="username" placeholder = "Your username">
             </div>
             <div class="form-group">
-                <label for="First-Name">First Name</label>
+                <label for="First-Name" class = "RegField">First Name</label>
                 <input type = "text" class="form-control" name="firstname" id="firstname" placeholder = "Your first name">
             </div>
              <div class="form-group">
-                <label for="lastname">Last Name</label>
+                <label for="lastname" class = "RegField">Last Name</label>
                 <input type = "text" class="form-control" name="lastname" id="lastname" placeholder = "Your last name">
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password" class = "RegField">Password</label>
                 <input type="password" class="form-control" name="password" id="password" placeholder = "Your Password">
             </div>
             <div class="form-group">
-                <label for="email">Email</label>
+                <label for="email" class = "RegField">Email</label>
                 <input type = "email" class="form-control" name="email" id="email" placeholder = "Email Address">
             </div>
             <div class="form-group">
-                <label for="location">Location</label>
+                <label for="location" class = "RegField">Location</label>
                 <input type = "text" class="form-control" name="location" id="location" placeholder = "Location">
             </div>
             <div class="form-group">
             
-                <label for="biography">Biography</label>
+                <label for="biography" class = "RegField">Biography</label>
                 <textarea class="form-control" name="biography" id="biography"></textarea>
             </div>
             <div class="form-group">
-                <label for="photo">Photo</label><br>
+                <label for="photo" class = "RegField">Photo</label><br>
                 <input name="photo" id="photo" type="file">
             </div>
             
@@ -323,6 +362,7 @@ const Register =Vue.component('Register-form',{
              <button id = "newregbutton" class="btn btn-primary mb-2" @click.prevent= "Register()">Register</button>
              
         </form>
+        </div>
     </div>
     `,
     data: function() {
@@ -341,9 +381,10 @@ const Register =Vue.component('Register-form',{
                   
                 method: 'POST',
                 body: form_data,
-               headers: {
+               'headers': {
                 'X-CSRFToken': token
                 
+                    
                 },
                 credentials: 'same-origin' 
                })
@@ -363,8 +404,9 @@ const Register =Vue.component('Register-form',{
                     
                 }
                 else{
+                    self.Success = "no"
                     self.state = jsonResponse.error
-                    alert("Registration Failed")
+                    alert("Registration Failed");
                 }
                 })
                 .catch(function (error) {
@@ -425,7 +467,11 @@ const Posts =Vue.component('Post-form',{
     `,
     created: function() {
     let self = this;
-    fetch('/api/users')// use my My-Profile menu-item
+    fetch('/api/users',{
+         'headers':{
+             'Authorization': 'Bearer ' + localStorage.getItem('token')
+         }
+     })// use my My-Profile menu-item
      .then(function(response) {
         return response.json();
         })
@@ -453,8 +499,10 @@ const Posts =Vue.component('Post-form',{
                   
                 method: 'POST',
                 body: form_data,
-               headers: {
-                'X-CSRFToken': token
+               'headers': {
+                'X-CSRFToken': token,
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+                
                 },
                 credentials: 'same-origin' 
                })
@@ -462,6 +510,9 @@ const Posts =Vue.component('Post-form',{
                 return response.json();
                 })
                 .then(function (jsonResponse) {
+                if(jsonResponse.state){
+                    
+                
                 if(jsonResponse.state == "success"){
                     self.postStatus = "OK"
                     self.message = "Post Added Successfully!"
@@ -470,8 +521,12 @@ const Posts =Vue.component('Post-form',{
                      self.postStatus = "wrong"
                      self.message =jsonResponse.error
                 }
-                console.log(jsonResponse)              
-                })
+                console.log(jsonResponse)              ;
+                }
+                else{
+                    alert("You must be logged in to use this Function!");
+                }
+                    })
                 .catch(function (error) {
                 console.log(error);
                 });
@@ -544,18 +599,29 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
     let self = this;
     if(self.$route.params.user_id =="Your_Profile"){
         console.log("Fetching")
-        fetch('/api/users')// use my My-Profile menu-item
+        fetch('/api/users',{
+            'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+        })// use my My-Profile menu-item
          .then(function(response) {
         return response.json();
         })
         .then(function(data) {
-        console.log(data);
+        if(data.ID){
+        console.log(data)
+        
         self.$route.params.user_id = data.ID;
         console.log(self.$route.params.user_id + "HERE")
         self.ID = self.$route.params.user_id
         console.log(self.ID)
         console.log(self.ID + "present")
-        fetch('/api/users/'+self.ID+'/posts')
+        fetch('/api/users/'+self.ID+'/posts',
+        {
+            'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+        })
         .then(function(response) {
         return response.json();
         })
@@ -577,6 +643,11 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         self.PostNumber = data.PAmt;
         self.follownumber = data.userInfo[0].followAmt
         });
+        }
+        else{
+            alert("You must be logged in to use this Function!");
+            self.$router.push({ path: '/'})
+        }
         });
     }
     /*fetch('/api/posts')// use my My-Profile menu-item
@@ -592,14 +663,20 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         });
     */
     else{
+      
       self.ID= self.$route.params.user_id  ;
       console.log(self.$route.params.user_id);
       console.log(self.ID + "present")
-        fetch('/api/users/'+self.ID+'/posts')
+        fetch('/api/users/'+self.ID+'/posts',{
+            'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+        })
         .then(function(response) {
         return response.json();
         })
         .then(function(data) {
+            if(data.follow){
          //self.$route.params.user_id =null
         console.log(data)
         if(data.follow == "yes"){
@@ -615,6 +692,10 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         self.Posts = data.userPosts;
         self.PostNumber = data.PAmt;
         self.follownumber = data.userInfo[0].followAmt
+        }
+        else{
+            alert("You must be logged in to use this function!")
+        }
         });
     }
         
@@ -636,7 +717,12 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
   },
   methods:{
       Follow: function(UID){
-          fetch('/api/users/'+UID+'/follow')
+          fetch('/api/users/'+UID+'/follow',
+          {
+              'headers':{
+                      'Authorization': 'Bearer ' + localStorage.getItem('token')
+                    }
+          })
         .then(function(response) {
         return response.json();
         })
@@ -680,20 +766,23 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
 const Login =Vue.component('Login-form',{
     template:`
     <div>
+        <h3 id = "LogTitle">Login</h3>
+        <div class = "LForm">
         <form  enctype="multipart/form-data" id="LoginForm">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username" class = "logField">Username</label>
                 <input type = "text" class="form-control" name="username" id="username" placeholder = "Your username">
             </div>
             
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password" class = "logField">Password</label>
                 <input type="password" class="form-control" name="password" id="password" placeholder = "Your Password">
             </div>
             
-             <button class="btn btn-primary mb-2" @click.prevent="LoggingIn">Login</button>
+             <button id = "logentry" class="btn btn-primary mb-2" @click.prevent="LoggingIn">Login</button>
         </form>
         {{state}}
+    </div>
     </div>
     
     `,
@@ -713,8 +802,11 @@ const Login =Vue.component('Login-form',{
                 
                 method: 'POST',
                 body: form_data,
-               headers: {
+               'headers': {
                 'X-CSRFToken': token
+                
+                      
+                    
                 },
                 credentials: 'same-origin' 
                })
@@ -727,6 +819,10 @@ const Login =Vue.component('Login-form',{
                 console.log(jsonResponse)   
                 
                 if(jsonResponse.LoginState == 'Success'){
+                    let jwt_token = jsonResponse.data.token;
+                    localStorage.setItem('token', jwt_token);
+                    console.info('Token generated and added to localStorage.');
+                    self.token = jwt_token;
                     alert("Login Successful")
                     self.$router.push({ name: 'explore' });
                     console.log(self.Result)
@@ -830,7 +926,12 @@ const router = new VueRouter({
 // Instantiate our main Vue Instance
 let app = new Vue({
     el: "#app",
-    
+    data: {
+        result: 'The result will appear here.',
+        token: '',
+        tasks: [],
+        error: false
+    },
     
     router
 });
