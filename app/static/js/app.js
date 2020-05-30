@@ -7,44 +7,74 @@
 import Vuetify from 'vuetify';
 import "isomorphic-fetch";*/
 //Make sure to add click.prevent to all buttons
+
 const proxyurl = "https://whispering-tor-87831.herokuapp.com";
 
 
 Vue.prototype.$logStatus = "off";
 const Explore = Vue.component('Explore-page',{//requires current user ID
     template:`
-    <div class = "UsersPosts" class="formstuff">
-        <div class = "NewPostButton">
-            <button class="btn btn-primary mb-2" @click="GoToPostForm">New Post</button>
-        </div>
-        <ul>
-        <li v-for="post in Posts" class="post__item">
+    <div class = "UsersPosts">
+       
+        <div class = "posts">
+       
+        <span v-for="post in Posts" class="post__item">
         <div class = "post">
+            
             <span v-for="user in Users">
                 <span v-if="user.id == post.user_id">
                 
-                    <img class = "profexplorepic" :src="'/static/uploads/' + user.photo" :alt="user.photo" /><button class="btn btn-primary mb-2" @click="GoToUser(user.username)">{{user.username}}</button>
-                    <!--img src="../static/Halo_master_chief.jpe"-->
+                    <img class = "profexplorepic" :src="'/static/uploads/' + user.photo" :alt="user.photo" /><button id = "codeName" class="btn btn-primary mb-2" @click="GoToUser(user.username)">{{user.username}}</button>
+                    
                     
                 </span>
               
             </span>
+            <br>
           <img class = "postpic" :src="'/static/uploads/'+post.photo" alt = "Picture"/> 
-          {{post.photo}}
+          
           <br>
-          {{post.caption}}
-          <button class="btn btn-primary mb-2" @click="AddLike(post.id)">Like</button>
+          <p class = "cap">{{post.caption}}</p>
+            <div class = "postInfo">
+             
+                <div>
+                <button id = "likeit" class="btn btn-primary mb-2" @click="AddLike(post.id),post.likes++"><img id = "likeicon" src="../static/likeicon.png"></button>{{post.likes}} <p id = "likeAmt">Likes!</p>
+                </div>
+                
+             
+             
+             
+             
+             <div id = "postdate">
+                {{post.created_on}}
+             </div>
+             </div>
+             </div>
+         
+        
+        </span>
         </div>
-        </li>
-        </ul>
+        
+        
+         <div class = "NewPostButton">
+            <button id = "postit" class="btn btn-primary mb-2" @click="GoToPostForm">New Post</button>
+        </div>
     </div>
    
     
     `
-,// Problem with images : Name in upload folder and name returned by photo field of User/Post not Matching!!!
+,
   created: function() {
     let self = this;
-    fetch('/api/posts')
+    fetch('/api/users')// use my My-Profile menu-item
+         .then(function(response) {
+        return response.json();
+        })
+        .then(function(data) {
+        console.log(data);
+        
+        self.LikeID = data.ID});
+     fetch('/api/posts')
      .then(function(response) {
         return response.json();
         })
@@ -52,7 +82,9 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
         console.log(data);
         self.Users = data.Users;
         self.Posts = data.Posts;
+        self.Likes = data.Likes;
         });
+   
     
         /*fetch('/api/users/self.ID/posts')
         .then(function(response) {
@@ -63,11 +95,14 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
         //self.Users = data.userInfo;
         });*/
         
+        
         },
     data: function() {
   return {
   Users: [],
   Posts : [],
+  Likes : [],
+  LikeID: null,
   PostID: null,
   ViewID: null
     }
@@ -108,14 +143,27 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
                 .then(function (data) {
                 // display a success message
                 console.log(data)          
+                if(data.likestatus == 'done'){
+                    alert("You have already liked this post!")
+                }
+                else{
                 //self.PostID = data.ID
                 //router.push({ name: 'posts/new', params: { Pid:self.PostID } })
                 // remember to set up prop['Pid' in posts/new frontend
                 //route.push({ path: '/posts/new'})
+                for(post in self.Posts){
+                    if(self.Posts[post].id == PostID){
+                        self.Posts[post].likes +=1
+                    }
+                }
+                }
                 })
                 .catch(function (error) {
                 console.log(error);
                 });
+          },
+          Liker: function () {
+             alert("You have already liked this post!")
           },
           
           
@@ -149,17 +197,23 @@ const Explore = Vue.component('Explore-page',{//requires current user ID
 
 const Home = Vue.component('Home-page',{
     template:`
+    
     <div id = "container">
-      <h1 class="glow">Photogram</h1>
-      <center><img src="/static/hearthands.jpg" style="width:900px;height:380px;"></center>
-
-      <div class="buttons">
-        <button class="button1"
-        @click="GoToLogin">LOGIN</button>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <button class="button2"
-        @click="GoToRegister">REGISTER</button> 
-      </div>
+    <div class = "HomePicture">
+    <img id = "homeicon" src="../static/Halo_master_chief.jpe">
+    
     </div>
+    <div class = "homebuttons">
+    <div class = "title">
+    <img id = "titleicon" src="../static/camera.png">
+    <h4 id = "photogram">Photogram</h4>
+    </div>
+    <hr id = "line">
+    <p id = "welcomehome">Share photos of your favourite moments with friends, family and the world.</p> 
+    <button id = "regbutton"class="btn btn-primary mb-2"@click="GoToRegister">Register</button>
+      <button id = "logbutton"class="btn btn-primary mb-2"@click="GoToLogin">Login Now</button>
+    </div>
+          </div>
       `,
       methods:
       {     
@@ -223,7 +277,7 @@ const Logout = Vue.component('LogOff',{
 })
 const Register =Vue.component('Register-form',{
     template:`
-    <div class="formstuff">
+    <div>
         <span v-if="Success != 'Yes'">
         <div class = "failure">
         <li v-for="error in state">{{ error }}</p>
@@ -233,27 +287,27 @@ const Register =Vue.component('Register-form',{
         <form @submit.prevent="Register" enctype="multipart/form-data" id="RegisterForm">
             <div class="form-group">
                 <label for="username">Username</label>
-                <input type = "text" class="form-control" name="username" id="username">
+                <input type = "text" class="form-control" name="username" id="username" placeholder = "Your username">
             </div>
             <div class="form-group">
-                <label for="First-Name">FirstName</label>
-                <input type = "text" class="form-control" name="firstname" id="firstname" placeholder = "Eg: John">
+                <label for="First-Name">First Name</label>
+                <input type = "text" class="form-control" name="firstname" id="firstname" placeholder = "Your first name">
             </div>
              <div class="form-group">
                 <label for="lastname">Last Name</label>
-                <input type = "text" class="form-control" name="lastname" id="lastname" placeholder = "Eg: Doe">
+                <input type = "text" class="form-control" name="lastname" id="lastname" placeholder = "Your last name">
             </div>
             <div class="form-group">
                 <label for="password">Password</label>
-                <input type="password" class="form-control" name="password" id="password">
+                <input type="password" class="form-control" name="password" id="password" placeholder = "Your Password">
             </div>
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type = "email" class="form-control" name="email" id="email" placeholder = "Ed: john.doe@example.com">
+                <input type = "email" class="form-control" name="email" id="email" placeholder = "Email Address">
             </div>
             <div class="form-group">
                 <label for="location">Location</label>
-                <input type = "text" class="form-control" name="location" id="location" placeholder = "Eg: Jamaica">
+                <input type = "text" class="form-control" name="location" id="location" placeholder = "Location">
             </div>
             <div class="form-group">
             
@@ -261,12 +315,12 @@ const Register =Vue.component('Register-form',{
                 <textarea class="form-control" name="biography" id="biography"></textarea>
             </div>
             <div class="form-group">
-                <label for="photo">Photo</label>
+                <label for="photo">Photo</label><br>
                 <input name="photo" id="photo" type="file">
             </div>
             
             
-             <button class="btn btn-primary mb-2" @click.prevent= "Register()">Register</button>
+             <button id = "newregbutton" class="btn btn-primary mb-2" @click.prevent= "Register()">Register</button>
              
         </form>
     </div>
@@ -333,21 +387,39 @@ const Register =Vue.component('Register-form',{
 const Posts =Vue.component('Post-form',{
    // props: ['Pid'],
     template:`
-    <div class="formstuff">
+    <div>
+    
+        <span v-if="postStatus == 'OK'" >
+          <div class = "success">
+          {{message}}
+        
+          </div>
+        </span>
+        <span v-if="postStatus == 'wrong'">
+        <div class = "failure">
+        <li v-for="error in message">{{ error}}</p>
+        </li>
+        </div>
+        </span>
+        <br>
         <form  enctype="multipart/form-data" id="PostForm">
             
-            
+            <h5 class = "postWelcome">New Post</h5>
+            <div class = "PForm">
+            <div class ="PN">
             <div class="form-group">
-                <label for="photo">Photo</label>
+                <label for="photo" id = "photolabel">Photo</label><br>
                 <input name="photo" id="photo" placeholder = "No File Selected" type="file">
             </div>
             
             <div class="form-group">
             
-                <label for="caption">Caption</label>
-                <textarea class="form-control" name="caption" id="caption" placeholder ="Write a caption"></textarea>
+                <label for="caption" id = "caplabel">Caption</label>
+                <textarea class="form-control" name="caption" id="caption" placeholder ="Write a caption..."></textarea>
             </div>
-             <button class="btn btn-primary mb-2" @click.prevent="NewPost">Submit</button>
+             <button id = "postentry" class="btn btn-primary mb-2" @click.prevent="NewPost">Submit</button>
+             </div>
+             </div>
         </form>
     </div>
     `,
@@ -367,7 +439,9 @@ const Posts =Vue.component('Post-form',{
   return {
   Users: [],
   Posts: [],
-  PID : null
+  message:'',
+  PID : null,
+  postStatus:''
     }
   },
     methods: {
@@ -388,7 +462,14 @@ const Posts =Vue.component('Post-form',{
                 return response.json();
                 })
                 .then(function (jsonResponse) {
-                
+                if(jsonResponse.state == "success"){
+                    self.postStatus = "OK"
+                    self.message = "Post Added Successfully!"
+                }
+                else{
+                     self.postStatus = "wrong"
+                     self.message =jsonResponse.error
+                }
                 console.log(jsonResponse)              
                 })
                 .catch(function (error) {
@@ -404,31 +485,54 @@ const Posts =Vue.component('Post-form',{
 const UserProfile = Vue.component('UserProfile',{// get user_id  and details from view file
     //props: ['user_id'],
     template : `
-    <div class = "UsersPosts" class="formstuff">
-            <!--p>{{$route.params.user_id }}</p-->
+    <div class = "PersonalPosts" :key="componentKey">
+            
             <div class = "user">
                 
-                    <div class = "UInfo">
-                    <img class = "profpic" :src="'/static/uploads/'+User[0].photo" alt = "Picture"/><p>{{User[0].username}} is HERE!</p>
-                    {{User[0].biography}}
+                    <div class = "UPic">
+                    <img class = "profpic" :src="'/static/uploads/'+User[0].photo" alt = "Picture"/>
+                    </div>
+                    <div class = "UData">
+                    <h4>{{User[0].FirstName}} {{User[0].LastName}}</h4>
+                    <p class = "short">{{User[0].location}}</p>
+                    
+                    <p>Member since {{User[0].date_joined}}</p>
+                    
+                    <p>{{User[0].biography}}</p>
+                    
                     </div>
                     <div class = "UserStats">
-                        <h4>Posts</h4>{{PostNumber}}
-                        <h4>Follows</h4>
+                        <div class ="Posts_Followers">
+                            <div>
+                            <h4>Posts</h4>{{PostNumber}}
+                            </div>
+                           <div> <h4>Followers</h4>{{follownumber}}</div><!--{{User[0].followAmt}}-->
+                        </div>
+                        <br>
+                        <span v-if = "followstate == 'No'">
+                        <button id = "followlink" class="btn btn-primary mb-2" @click.prevent="Follow(User[0].id),follownumber++,followstate ='yes'">Follow</button>
+                        </span>
+                        <span v-if = "followstate == 'same'">
+                        <button id = "followlink" class="btn btn-primary mb-2" @click.prevent="SameFollow">Follow</button>
+                        </span>
+                        <span v-if =  "followstate == 'yes'">
+                            <button id = "following" class="btn btn-primary mb-2" @click.prevent="Following">Following</button>
+                        </span>
                     </div>
                     <div>
                     
-                    <button class="btn btn-primary mb-2" @click.prevent="Follow(User[0].id)">Follow</button>
+                    
                         
                     </div>
-                    <div>
-                    <ul class = "UserItem">
-                        <li v-for="post in Posts">
+            </div>
+                    <div class = "UserPosts">
+                    <span v-for="post in Posts" class = "postings">
+                        
                         
                              <img class = "postpic" :src="'/static/uploads/'+post.photo" alt = "Picture"/> 
                          
-                        </li>
-                      </ul>
+                        
+                      </span>
                       </div>
                 
             </div>
@@ -438,7 +542,7 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
     `,
   created: function() {
     let self = this;
-    if(self.$route.params.user_id =="find"){
+    if(self.$route.params.user_id =="Your_Profile"){
         console.log("Fetching")
         fetch('/api/users')// use my My-Profile menu-item
          .then(function(response) {
@@ -456,11 +560,22 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         return response.json();
         })
         .then(function(data) {
+             if(data.follow == "yes"){
+            self.followstate = "yes";
+            console.log(data.follow)
+            console.log(self.followstate)
+            
+             }
+            if(data.follow == "same guy"){
+                self.followstate = "same"
+            } 
          //self.$route.params.user_id =null
         console.log(data);
+        console.log(self.followstate)
         self.User = data.userInfo;
         self.Posts = data.userPosts;
         self.PostNumber = data.PAmt;
+        self.follownumber = data.userInfo[0].followAmt
         });
         });
     }
@@ -486,10 +601,20 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         })
         .then(function(data) {
          //self.$route.params.user_id =null
-        console.log(data);
+        console.log(data)
+        if(data.follow == "yes"){
+            self.followstate = "yes";
+            console.log(data.follow)
+            console.log(self.followstate)
+        }
+        if(data.follow == "same guy"){
+                self.followstate = "same"
+                console.log(data.follow)
+            } 
         self.User = data.userInfo;
         self.Posts = data.userPosts;
         self.PostNumber = data.PAmt;
+        self.follownumber = data.userInfo[0].followAmt
         });
     }
         
@@ -497,8 +622,12 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         },
     data: function() {
   return {
-  User: null,
+  componentKey: 0,
+  User: [],
   Posts: [],
+  componentKey: 0,
+  follownumber:0,
+  followstate: "No",
   PostNumber:null,
   ID : null,
  // FollowerID:null,
@@ -512,22 +641,45 @@ const UserProfile = Vue.component('UserProfile',{// get user_id  and details fro
         return response.json();
         })
         .then(function(data) {
-        
+        console.log(UID + "Following")
         console.log(data);
-        
+        self.followstate = 'yes'
+        //self.follownumber += 1
         
         });
         
         
           
+      },
+      Following: function(){
+          alert("You are already following this user!")
+      },
+      SameFollow: function(){
+           alert("YOU CANNOT FOLLOW YOURSELF!")
+      },
+       
+    
+  
+  },
+  watch:{
+      
+      '$route' (to, from) {
+           if (to.path === '/users/Your_Profile') {
+               console.log("Kill Me");
+               this.$router.go(this.$router.currentRoute) 
+               
+               
+           }
       }
+      
   }
-})
+  
+});
 
 
 const Login =Vue.component('Login-form',{
     template:`
-    <div class="formstuff">
+    <div>
         <form  enctype="multipart/form-data" id="LoginForm">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -620,7 +772,7 @@ Vue.component('app-header', {
             <router-link class="nav-link" to="/explore">Explore <span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
-            <router-link class="nav-link" to="/users/find">My own Profile <span class="sr-only">(current)</span></router-link>
+            <router-link class="nav-link" :to="{ name: 'users', params: { user_id:'Your_Profile' }}">My own Profile <span class="sr-only">(current)</span></router-link>
           </li>
           <li class="nav-item active">
                     
@@ -678,15 +830,7 @@ const router = new VueRouter({
 // Instantiate our main Vue Instance
 let app = new Vue({
     el: "#app",
-    data: {
-        loggedin: null
-    },
-    methods: { 
-        
-    updateLoginData: function(state) {
-      //console.log('updateComponentData', this.$refs)
-      this.loggedin = state
-      console.log(this.loggedin)
-    }} ,
+    
+    
     router
 });
