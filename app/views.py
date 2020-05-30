@@ -15,12 +15,17 @@ from  datetime import date
 import datetime
 from werkzeug.datastructures import CombinedMultiDict
 #from app.__init__ import UPLOAD_FOLDER
-from flask import render_template, request, redirect, url_for, flash, session, abort
+from flask import render_template, request, redirect, url_for, flash, session, abort, g
 from flask_login import login_user, logout_user, current_user, login_required
 from app.forms import Login, RegForm,PostForm
 from app.models import User, Follows, Post, Likes 
 #from is_safe_url import is_safe_url
 from werkzeug.security import check_password_hash
+import jwt
+from flask import _request_ctx_stack
+from functools import wraps
+import base64
+
 
 
 @app.route('/', defaults={'path': ''})
@@ -38,7 +43,35 @@ Usergroup = []
 # Routing for your application.
 ###
 now = datetime.datetime.now()
+def requires_auth(f):
+  @wraps(f)
+  def decorated(*args, **kwargs):
+    auth = request.headers.get('Authorization', None)
+    if not auth:
+      return jsonify({'code': 'authorization_header_missing', 'description': 'Authorization header is expected'}), 401
 
+    parts = auth.split()
+
+    if parts[0].lower() != 'bearer':
+      return jsonify({'code': 'invalid_header', 'description': 'Authorization header must start with Bearer'}), 401
+    elif len(parts) == 1:
+      return jsonify({'code': 'invalid_header', 'description': 'Token not found'}), 401
+    elif len(parts) > 2:
+      return jsonify({'code': 'invalid_header', 'description': 'Authorization header must be Bearer + \s + token'}), 401
+
+    token = parts[1]
+    try:
+         payload = jwt.decode(token, 'some-secret')
+
+    except jwt.ExpiredSignature:
+        return jsonify({'code': 'token_expired', 'description': 'token is expired'}), 401
+    except jwt.DecodeError:
+        return jsonify({'code': 'token_invalid_signature', 'description': 'Token signature is invalid'}), 401
+
+    g.current_user = user = payload
+    return f(*args, **kwargs)
+
+  return decorated
 # Here we define a function to collect form errors from Flask-WTF
 # which we can later use
 def form_errors(form):
@@ -67,11 +100,12 @@ def get_uploaded_images():
     
 # connect to v-onclick button in api fetch in js file
 @app.route('/api/users/<user_id>/follow')
+@requires_auth
 def follow(user_id):
     followerID = current_user.id
     
     print(followerID==int(user_id))
-    if followerID != int(user_id):
+    if followerID != int(user_id):    
         if Follows.query.filter_by(user_id=user_id,follower_id=followerID).first() is None:
             newFollow = Follows(user_id,followerID)
             db.session.add(newFollow)
@@ -84,6 +118,7 @@ def follow(user_id):
     
     
 @app.route('/api/posts/<post_id>/like')
+@requires_auth
 def Like(post_id):
     LikerID = current_user.id
     LikeCheck=Likes.query.filter_by(user_id=LikerID,post_id=post_id).first()
@@ -91,9 +126,9 @@ def Like(post_id):
         LikedPost = Likes(LikerID,post_id)
         db.session.add(LikedPost)
         db.session.commit()
-        return jsonify(Like = "New Like!")
+        return jsonify(Like = "New Like!",likestatus = "free")
     else:
-        return jsonify(greedy = "You have already liked this post!")
+        return jsonify(greedy = "You have already liked this post!",likestatus = "done")
         # display message in webpage
 
     
@@ -116,11 +151,15 @@ def login():
                 
                 
                 login_user(user)
+                payload = {'sub':'12345' , 'name':username }
+                token = jwt.encode(payload, 'some-secret', algorithm='HS256').decode('utf-8')
+
+                return jsonify(error=None, data={'token': token}, message="Token Generated", LoginState = "Success")
                 
                 
                 
                 
-                return jsonify(LoginState = "Success" )
+                #return jsonify(LoginState = "Success" )
                 
                 
                  
@@ -131,26 +170,16 @@ def login():
             return jsonify(LoginState = "Failure")
             
     
-#Alternatively...
-#if current_user.is_authenticated:
-"""@app.route('/api/auth/login', methods=['POST', 'GET'])
-def login():    
-    error = None
-    form = Login()
-    if form.validate_on_submit():
-        uName = form.username.data
-        pword = form.password.data
-        us = User.query.filter_by(username=uName).first()
-        if check_password_hash(us['password'],pword):
-            session['user_id'] = us['id']
-    """
-@app.route("/api/posts", methods=['GET']) 
 
+@app.route("/api/posts", methods=['GET']) 
+@requires_auth
 def AllPosts():
     PostData = []
     UserData = []
+    LikeData = []
     AllUsers = db.session.query(User).all()
     AllPost = db.session.query(Post).all()
+    AllLikes = db.session.query(Likes).all()
     
     for post in AllPost:
         data = {
@@ -163,6 +192,16 @@ def AllPosts():
             
         }
         PostData.append(data)
+    for like in AllLikes:
+        data = {
+            'id': like.id,
+            'user_id': like.user_id,
+            
+            'post_id': like.post_id,
+            
+            
+        }
+        LikeData.append(data)
     for user in AllUsers:
         data = {
             'id':user.id,
@@ -179,10 +218,10 @@ def AllPosts():
         UserData.append(data)
     
     
-    return jsonify(Posts=PostData,Users = UserData)
+    return jsonify(Posts=PostData,Users = UserData, Likes = LikeData)
 
 @app.route("/api/users", methods=['GET'])   
-#@login_required
+@requires_auth
 def getUserID():
     ID = current_user.id
     return jsonify(ID=ID)
@@ -190,11 +229,12 @@ def getUserID():
     
     
 @app.route("/api/users/<user_id>/posts", methods=['GET','POST'])
+@requires_auth
 #@login_required
 def posts(user_id):
     # how exactly will the user_id be obtained? - check corresponding vue frontend
-    form =PostForm(CombinedMultiDict((request.files, request.form)))
-    #form =PostForm()
+    #form =PostForm(CombinedMultiDict((request.files, request.form)))
+    form =PostForm()
     filefolder = UPLOAD_FOLDER
     
     if request.method == 'POST':
@@ -215,14 +255,22 @@ def posts(user_id):
             db.session.commit()
             status = "success"
             return jsonify(state=status)
+        else:
+            errors = form_errors(form)
+            status = "wrong"
+            return jsonify(error=errors,state=status)
     elif request.method == 'GET':
         posts = Post.query.filter_by(user_id=user_id).all() # Created as an array (I think)
         followYet=Follows.query.filter_by(user_id=user_id,follower_id=current_user.id).count()
-        print(followYet)
-        if followYet ==0:
-            following = "no"
+        
+        if int(user_id)==int(current_user.id):
+                following = "same guy"
         else:
-            following ="yes"
+            if followYet ==0:
+                following = "no"
+            else:
+                
+                following ="yes"
         postList = [] 
         postAmt= db.session.query(Post).filter_by(user_id=user_id).count()
         Followers= db.session.query(Follows).filter_by(user_id=user_id).count()
@@ -237,7 +285,7 @@ def posts(user_id):
                     'created_on':post.created_on,
                     
                 }
-            postList.append(data)
+                postList.append(data)
         userFacts = []
         user = User.query.filter_by(id=user_id).first()
         
@@ -274,8 +322,13 @@ def register():
     
     
     if request.method == 'POST':
-       
-        if form.validate_on_submit() and User.query.filter_by(username=form.username.data).first() is None and User.query.filter_by(email=form.email.data).first() is None:
+        pwordcheck = db.session.query(User).all()
+        pexists = False
+        for user in pwordcheck:
+            if check_password_hash(user.password, form.password.data):
+                pexists = True
+                
+        if form.validate_on_submit() and User.query.filter_by(username=form.username.data).first() is None and pexists==False and User.query.filter_by(email=form.email.data).first() is None:
             #try to figure how to hash password here so that you can check it as well
         
             # Get the username and password values from the form.
@@ -313,6 +366,8 @@ def register():
             
             errors = form_errors(form)
             status = "wrong"
+            if pexists ==True:
+                errors.append("Password already exists!")
             if User.query.filter_by(username=form.username.data).first() is not None:
                 uNameError = "User name already exists"
                 errors.append(uNameError)
@@ -358,6 +413,7 @@ def load_user(id):
 ###
 
 @app.route("/api/auth/logout", methods = ['GET'])
+@requires_auth
 #@login_required
 def logout():
     # Logout the user and end the session
