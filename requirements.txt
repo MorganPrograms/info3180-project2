@@ -12,3 +12,4 @@ Flask-Migrate
 Flask-Script
 Flask-Login
 psycopg2
+flask_module

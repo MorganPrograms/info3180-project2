@@ -1,3 +1,151 @@
 body {
     padding-top: 5rem;
+    background-color: lightgrey;
+}
+#codeName{
+	color: black;
+	background-color: white;
+	/*border: 3px solid white;*/
+	border:none;
+}
+.profexplorepic{
+	width:50px;
+	height: 50px;
+	border-radius: 50%;
+	margin-left:  50px;
+	margin-bottom: 30px;
+	margin-top: 20px;
+}
+.postpic{
+	width:100%;
+	height:500px;
+}
+.posts{
+	/*background-color: red;*/
+	width:95%;
+	
+}
+.cap{
+	margin-top: 15px;
+	margin-left: 10px;
+}
+.post{
+	margin-bottom: 100px;
+	background-color: white;
+}
+.profpic{
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	margin-top: 15px;
+	margin-bottom: 10px;
+	margin-left: 15px;
+}
+.Posts_Followers{
+	display: grid;
+	grid-template-columns: 50% 50%;
+}
+.short{
+	margin:0;
+}
+
+.postpic{
+	height: 290px;
+}
+#followlink{
+	width:90%;
+}
+#following{
+	width:90%;
+	background-color: green;
+}
+.postings{
+	
+	display: grid;
+	 grid-template-columns: repeat(3, 1fr);
+	 grid-gap: 30px;
+}
+.user{
+	display: grid;
+	grid-template-columns: 20% 50% 30%;
+	background-color: white;
+	margin-bottom: 30px;
+}
+.postInfo{
+	margin-top: 50px;
+	display: flex;
+	justify-content: space-between;
+}
+#postdate{
+	margin-right: 30px;
+}
+#likeAmt{
+display: inline;	
+}
+#likeicon{
+	height: 30px;
+	width: 30px;
+}
+#postit{
+	width:80%;
+}
+#likeit{
+	border:none;
+	background-color: white;
+}
+.UsersPosts{
+	display: grid;
+    line-height:3;
+    
+    grid-template-columns: 3fr 1fr;
+    grid-row-gap: 500px; 
+}
+.failure{
+	width: 100%;
+	border: 3px solid gold;
+	background-color: #ffcccb ;
+	border-radius: 12px;
+	
+}
+
+.homebuttons{
+	text-align: center;
+	background-color: white;
+	height: 350px;
+/*	width: 50%;*/
+}
+#homeicon{
+	height: 350px;
+	width: 98%; 
+}
+#titleicon{
+	height: 30px;
+	width:  30px;
+	
+}
+.title{
+	margin-top: 20px;
+}
+#welcomehome{
+	font-weight: bold;
+	margin-bottom : 50px;
+}
+#regbutton,#logbutton{
+	width: 30%;
+}
+#regbutton{
+	background-color:  lightgreen;
+}
+#line{
+	width: 95%;
+}
+#photogram{
+	font-style: italic;
+	text-decoration: underline;
+}
+#container{
+	margin-top: 100px;
+	display: grid;
+    /*line-height:2;*/
+    grid-template-columns: 1fr 1fr;
 }
